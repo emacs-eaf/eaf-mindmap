@@ -381,7 +381,7 @@ actural call `org-json-gen-alist1' to work."
       (eaf-edit-mode)
       (set (make-local-variable 'eaf--buffer-id) buffer-id))
     (switch-to-buffer edit-text-buffer)
-    (setq-local eaf-mindmap--current-add-mode "sub")
+    (setq-local eaf-edit-confirm-action "mindmap-sub")
     (setq header-line-format
           (substitute-command-keys
            (concat
@@ -405,7 +405,7 @@ actural call `org-json-gen-alist1' to work."
       (eaf-edit-mode)
       (set (make-local-variable 'eaf--buffer-id) buffer-id))
     (switch-to-buffer edit-text-buffer)
-    (setq-local eaf-mindmap--current-add-mode "brother")
+    (setq-local eaf-edit-confirm-action "mindmap-brother")
     (setq header-line-format
           (substitute-command-keys
            (concat
@@ -429,7 +429,7 @@ actural call `org-json-gen-alist1' to work."
       (eaf-edit-mode)
       (set (make-local-variable 'eaf--buffer-id) buffer-id))
     (switch-to-buffer edit-text-buffer)
-    (setq-local eaf-mindmap--current-add-mode "middle")
+    (setq-local eaf-edit-confirm-action "mindmap-middle")
     (setq header-line-format
           (substitute-command-keys
            (concat
@@ -458,6 +458,24 @@ actural call `org-json-gen-alist1' to work."
 (add-to-list 'eaf-app-module-path-alist '("mindmap" . path))
 
 (add-to-list 'eaf-app-extensions-alist '("mindmap" . eaf-mindmap-extension-list))
+
+(defun eaf-mindmap-confirm-sub-nodes ()
+  (eaf-call-async "update_multiple_sub_nodes"
+                         eaf--buffer-id
+                         (buffer-string)))
+(add-to-list 'eaf-edit-confirm-function-alist '("mindmap-sub" . eaf-mindmap-confirm-sub-nodes))
+
+(defun eaf-mindmap-confirm-brother-nodes ()
+  (eaf-call-async "update_multiple_brother_nodes"
+                         eaf--buffer-id
+                         (buffer-string)))
+(add-to-list 'eaf-edit-confirm-function-alist '("mindmap-brother" . eaf-mindmap-confirm-brother-nodes))
+
+(defun eaf-mindmap-confirm-middle-nodes ()
+  (eaf-call-async "update_multiple_middle_nodes"
+                         eaf--buffer-id
+                         (buffer-string)))
+(add-to-list 'eaf-edit-confirm-function-alist '("mindmap-middle" . eaf-mindmap-confirm-middle-nodes))
 
 (provide 'eaf-mindmap)
 
