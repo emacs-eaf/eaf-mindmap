@@ -86,8 +86,7 @@ class AppBuffer(BrowserBuffer):
 
         QTimer.singleShot(200, lambda: self.buffer_widget.eval_js("select_root_node();"))
 
-        color = "#242525" if self.dark_mode_is_enabled() else "#FFFFFF"
-        self.buffer_widget.eval_js("init_background('{}');".format(color))
+        self.buffer_widget.eval_js("init_background('{}');".format(get_emacs_var("eaf-emacs-theme-background-color")))
 
         self.change_title(self.get_title())
 
@@ -109,8 +108,7 @@ class AppBuffer(BrowserBuffer):
             with open(self.url, "r") as f:
                 self.buffer_widget.execute_js("refresh('{}');".format(string_to_base64(f.read())))
 
-            color = "#242525" if self.dark_mode_is_enabled() else "#FFFFFF"
-            self.buffer_widget.eval_js("init_background('{}');".format(color))
+            self.buffer_widget.eval_js("init_background('{}');".format(get_emacs_var("eaf-emacs-theme-background-color")))
 
             self.change_title(self.get_title())
 
