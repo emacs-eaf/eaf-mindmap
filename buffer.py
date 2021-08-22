@@ -282,9 +282,7 @@ class AppBuffer(BrowserBuffer):
 
     def dark_mode_is_enabled(self):
         ''' Return bool of whether dark mode is enabled.'''
-        (self.mindmap_dark_mode, self.theme_mode) = get_emacs_vars([
-            "eaf-mindmap-dark-mode",
-            "eaf-emacs-theme-mode"])
+        (self.mindmap_dark_mode) = get_emacs_vars(["eaf-mindmap-dark-mode"])
 
         return (self.mindmap_dark_mode == "force" or \
                 self.mindmap_dark_mode == True or \
