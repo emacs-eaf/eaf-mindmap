@@ -24,7 +24,7 @@ from PyQt5.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QColor, QMouseEvent
 from core.webengine import BrowserBuffer
-from core.utils import touch, string_to_base64, interactive, eval_in_emacs, message_to_emacs, get_emacs_var
+from core.utils import touch, string_to_base64, interactive, eval_in_emacs, message_to_emacs, get_emacs_vars
 from html import escape, unescape
 import os
 import base64
@@ -41,7 +41,9 @@ class AppBuffer(BrowserBuffer):
 
         self.cut_node_id = None
 
-        edit_mode = "true" if get_emacs_var("eaf-mindmap-edit-mode") else "false"
+        (self.mindmap_edit_mode, self.mindmap_save_path) = get_emacs_vars(["eaf-mindmap-edit-mode", "eaf-mindmap-save-path"])
+
+        edit_mode = "true" if self.mindmap_edit_mode else "false"
         for method_name in ["add_sub_node", "add_brother_node", "add_middle_node"]:
             self.build_js_method(method_name, True, js_kwargs={"inline": edit_mode})
 
@@ -86,7 +88,7 @@ class AppBuffer(BrowserBuffer):
 
         QTimer.singleShot(200, lambda: self.buffer_widget.eval_js("select_root_node();"))
 
-        self.buffer_widget.eval_js("init_background('{}');".format(get_emacs_var("eaf-emacs-theme-background-color")))
+        self.buffer_widget.eval_js("init_background('{}');".format(self.theme_background_color))
 
         self.change_title(self.get_title())
 
@@ -108,7 +110,7 @@ class AppBuffer(BrowserBuffer):
             with open(self.url, "r") as f:
                 self.buffer_widget.eval_js("refresh('{}');".format(string_to_base64(f.read())))
 
-            self.buffer_widget.eval_js("init_background('{}');".format(get_emacs_var("eaf-emacs-theme-background-color")))
+            self.buffer_widget.eval_js("init_background('{}');".format(self.theme_background_color))
 
             self.change_title(self.get_title())
 
@@ -241,7 +243,7 @@ class AppBuffer(BrowserBuffer):
 
     def get_save_path(self, extension_name):
         if self.url.strip() == "":
-            return os.path.join(os.path.expanduser(get_emacs_var("eaf-mindmap-save-path")), self.get_root_node_topic().replace(" ", "_") + time.strftime("_%Y%m%d_%H%M%S", time.localtime(int(time.time()))) + "." + extension_name)
+            return os.path.join(os.path.expanduser(self.mindmap_save_path), self.get_root_node_topic().replace(" ", "_") + time.strftime("_%Y%m%d_%H%M%S", time.localtime(int(time.time()))) + "." + extension_name)
         else:
             return os.path.splitext(self.url)[0] + "." + extension_name
 
@@ -280,7 +282,11 @@ class AppBuffer(BrowserBuffer):
 
     def dark_mode_is_enabled(self):
         ''' Return bool of whether dark mode is enabled.'''
-        return (get_emacs_var("eaf-mindmap-dark-mode") == "force" or \
-                get_emacs_var("eaf-mindmap-dark-mode") == True or \
-                (get_emacs_var("eaf-mindmap-dark-mode") == "follow" and \
-                 get_emacs_var("eaf-emacs-theme-mode") == "dark"))
+        (self.mindmap_dark_mode, self.theme_mode) = get_emacs_vars([
+            "eaf-mindmap-dark-mode",
+            "eaf-emacs-theme-mode"])
+
+        return (self.mindmap_dark_mode == "force" or \
+                self.mindmap_dark_mode == True or \
+                (self.mindmap_dark_mode == "follow" and \
+                 self.theme_mode == "dark"))
