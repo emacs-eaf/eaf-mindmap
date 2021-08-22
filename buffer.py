@@ -80,7 +80,7 @@ class AppBuffer(BrowserBuffer):
             with open(self.url, "r") as f:
                 _, ext = os.path.splitext(self.url)
                 is_freemind = "true" if ext == ".mm" else "false"
-                self.buffer_widget.execute_js("open_file('{}', {});".format(string_to_base64(f.read()), is_freemind))
+                self.buffer_widget.eval_js("open_file('{}', {});".format(string_to_base64(f.read()), is_freemind))
         else:
             self.buffer_widget.eval_js("init_root_node();")
 
@@ -106,7 +106,7 @@ class AppBuffer(BrowserBuffer):
 
         if os.path.exists(self.url):
             with open(self.url, "r") as f:
-                self.buffer_widget.execute_js("refresh('{}');".format(string_to_base64(f.read())))
+                self.buffer_widget.eval_js("refresh('{}');".format(string_to_base64(f.read())))
 
             self.buffer_widget.eval_js("init_background('{}');".format(get_emacs_var("eaf-emacs-theme-background-color")))
 
@@ -257,7 +257,7 @@ class AppBuffer(BrowserBuffer):
     def save_file(self, notify=True):
         file_path = self.get_save_path("emm")
         with open(file_path, "w") as f:
-            f.write(self.buffer_widget.execute_js("save_file();"))
+            f.write(self.buffer_widget.eval_js("save_file();"))
 
         if notify:
             message_to_emacs("Save file: " + file_path)
@@ -273,7 +273,7 @@ class AppBuffer(BrowserBuffer):
     def save_freemind_file(self, notify=True):
         file_path = self.get_save_path("mm")
         with open(file_path, "w") as f:
-            f.write(self.buffer_widget.execute_js("save_freemind_file();"))
+            f.write(self.buffer_widget.eval_js("save_freemind_file();"))
 
         if notify:
             message_to_emacs("Save freemind file: " + file_path)
