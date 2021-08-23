@@ -64,6 +64,5 @@ Mindmap application for the [Emacs Application Framework](https://github.com/ema
 | `3` | insert_or_save_org_file |
 | `4` | insert_or_save_freemind_file |
 | `M-o` | eval_js |
-| `M-p` | eval_js_file |
+| `M-O` | eval_js_file |
 | `<f12>` | open_devtools |
-
