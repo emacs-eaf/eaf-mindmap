@@ -259,7 +259,7 @@ class AppBuffer(BrowserBuffer):
     def save_file(self, notify=True):
         file_path = self.get_save_path("emm")
         with open(file_path, "w") as f:
-            f.write(self.buffer_widget.eval_js("save_file();"))
+            f.write(self.buffer_widget.execute_js("save_file();"))
 
         if notify:
             message_to_emacs("Save file: " + file_path)
@@ -275,7 +275,7 @@ class AppBuffer(BrowserBuffer):
     def save_freemind_file(self, notify=True):
         file_path = self.get_save_path("mm")
         with open(file_path, "w") as f:
-            f.write(self.buffer_widget.eval_js("save_freemind_file();"))
+            f.write(self.buffer_widget.execute_js("save_freemind_file();"))
 
         if notify:
             message_to_emacs("Save freemind file: " + file_path)
