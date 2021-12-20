@@ -460,21 +460,24 @@ actural call `org-json-gen-alist1' to work."
 (add-to-list 'eaf-app-extensions-alist '("mindmap" . eaf-mindmap-extension-list))
 
 (defun eaf-mindmap-confirm-sub-nodes ()
-  (eaf-call-async "update_multiple_sub_nodes"
-                         eaf--buffer-id
-                         (buffer-string)))
+  (eaf-call-async "execute_function_with_args"
+                  eaf--buffer-id
+                  "update_multiple_sub_nodes"
+                  (buffer-string)))
 (add-to-list 'eaf-edit-confirm-function-alist '("mindmap-sub" . eaf-mindmap-confirm-sub-nodes))
 
 (defun eaf-mindmap-confirm-brother-nodes ()
-  (eaf-call-async "update_multiple_brother_nodes"
-                         eaf--buffer-id
-                         (buffer-string)))
+  (eaf-call-async "execute_function_with_args"
+                  eaf--buffer-id
+                  "update_multiple_brother_nodes"
+                  (buffer-string)))
 (add-to-list 'eaf-edit-confirm-function-alist '("mindmap-brother" . eaf-mindmap-confirm-brother-nodes))
 
 (defun eaf-mindmap-confirm-middle-nodes ()
-  (eaf-call-async "update_multiple_middle_nodes"
-                         eaf--buffer-id
-                         (buffer-string)))
+  (eaf-call-async "execute_function_with_args"
+                  eaf--buffer-id
+                  "update_multiple_middle_nodes"
+                  (buffer-string)))
 (add-to-list 'eaf-edit-confirm-function-alist '("mindmap-middle" . eaf-mindmap-confirm-middle-nodes))
 
 (provide 'eaf-mindmap)

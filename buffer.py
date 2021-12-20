@@ -24,7 +24,7 @@ from PyQt5.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QColor, QMouseEvent
 from core.webengine import BrowserBuffer
-from core.utils import touch, string_to_base64, interactive, eval_in_emacs, message_to_emacs, get_emacs_vars
+from core.utils import touch, string_to_base64, interactive, eval_in_emacs, message_to_emacs, get_emacs_vars, PostGui
 from html import escape, unescape
 import os
 import base64
@@ -288,3 +288,21 @@ class AppBuffer(BrowserBuffer):
                 self.mindmap_dark_mode == True or \
                 (self.mindmap_dark_mode == "follow" and \
                  self.theme_mode == "dark"))
+
+    @PostGui()
+    def update_multiple_sub_nodes(self, new_text):
+        ''' Update multiplt sub nodes.'''
+        for line in str(new_text).split("\n"):
+            self.add_texted_sub_node(line)
+
+    @PostGui()
+    def update_multiple_brother_nodes(self, new_text):
+        ''' Update multiplt brother nodes.'''
+        for line in str(new_text).split("\n"):
+            self.add_texted_brother_node(line)
+
+    @PostGui()
+    def update_multiple_middle_nodes(self, new_text):
+        ''' Update multiplt middle nodes.'''
+        for line in str(new_text).split("\n"):
+            self.add_texted_middle_node(line)
