@@ -24,7 +24,9 @@ from PyQt5.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QColor, QMouseEvent
 from core.webengine import BrowserBuffer
-from core.utils import touch, string_to_base64, interactive, eval_in_emacs, message_to_emacs, get_emacs_vars, PostGui
+from core.utils import (touch, string_to_base64, interactive, 
+                        eval_in_emacs, message_to_emacs, 
+                        get_emacs_vars, PostGui, get_app_dark_mode)
 from html import escape, unescape
 import os
 import base64
@@ -282,12 +284,7 @@ class AppBuffer(BrowserBuffer):
 
     def dark_mode_is_enabled(self):
         ''' Return bool of whether dark mode is enabled.'''
-        (self.mindmap_dark_mode) = get_emacs_vars(["eaf-mindmap-dark-mode"])
-
-        return (self.mindmap_dark_mode == "force" or \
-                self.mindmap_dark_mode == True or \
-                (self.mindmap_dark_mode == "follow" and \
-                 self.theme_mode == "dark"))
+        return get_app_dark_mode("eaf-mindmap-dark-mode")
 
     @PostGui()
     def update_multiple_sub_nodes(self, new_text):
