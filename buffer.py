@@ -19,10 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QColor, QMouseEvent
+from PyQt6 import QtCore
+from PyQt6.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QColor, QMouseEvent
 from core.webengine import BrowserBuffer
 from core.utils import (touch, string_to_base64, interactive, 
                         eval_in_emacs, message_to_emacs, 
@@ -75,7 +75,11 @@ class AppBuffer(BrowserBuffer):
 
         # The .jsmind-inner element is move right and bottom 30px,
         # so we must use a point greater than (30, 30), ex (100, 100).
-        self.focus_widget(QMouseEvent(QEvent.MouseButtonPress, QPointF(100, 100), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+        self.focus_widget(QMouseEvent(QEvent.Type.MouseButtonPress, 
+                                      QPointF(100, 100), 
+                                      Qt.MouseButton.LeftButton, 
+                                      Qt.MouseButton.LeftButton, 
+                                      Qt.KeyboardModifier.NoModifier))
 
     def init_file(self):
         self.url = os.path.expanduser(self.url)
