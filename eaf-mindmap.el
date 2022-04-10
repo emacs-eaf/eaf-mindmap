@@ -330,7 +330,7 @@ actural call `org-json-gen-alist1' to work."
                                    "#+end_src")
                          (concat "\""
                                  (replace-regexp-in-string
-                                  "\"" "\\\""
+                                  "\"" "\""
                                   (replace-regexp-in-string
                                    "\\\\" "\\\\" obj))
                                  "\"")))
