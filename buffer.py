@@ -31,6 +31,8 @@ from html import escape, unescape
 import os
 import base64
 import time
+import sys
+Py_version=sys.version_info
 
 class AppBuffer(BrowserBuffer):
 
@@ -257,7 +259,10 @@ class AppBuffer(BrowserBuffer):
         image_path = self.get_save_path("png")
         touch(image_path)
         with open(image_path, "wb") as f:
-            f.write(base64.decodestring(download_data.split("data:image/png;base64,")[1].encode("utf-8")))
+            if Py_version > (3,8):
+                f.write(base64.decodebytes(download_data.split("data:image/png;base64,")[1].encode("utf-8")))
+            else:
+                f.write(base64.decodestring(download_data.split("data:image/png;base64,")[1].encode("utf-8")))
 
         message_to_emacs("Save image: " + image_path)
 
