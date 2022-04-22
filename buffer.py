@@ -70,7 +70,7 @@ class AppBuffer(BrowserBuffer):
         self.buffer_widget.loadFinished.connect(lambda _: self.initialize())
 
     def resize_view(self):
-        self.buffer_widget.eval_js("relayout();")
+        self.buffer_widget.eval_js_function("relayout")
 
     def initialize(self):
         self.init_file()
@@ -90,13 +90,13 @@ class AppBuffer(BrowserBuffer):
             with open(self.url, "r") as f:
                 _, ext = os.path.splitext(self.url)
                 is_freemind = "true" if ext == ".mm" else "false"
-                self.buffer_widget.eval_js("open_file('{}', {});".format(string_to_base64(f.read()), is_freemind))
+                self.buffer_widget.eval_js_function("open_file", string_to_base64(f.read()), is_freemind)
         else:
-            self.buffer_widget.eval_js("init_root_node();")
+            self.buffer_widget.eval_js_function("init_root_node")
 
-        QTimer.singleShot(200, lambda: self.buffer_widget.eval_js("select_root_node();"))
+        QTimer.singleShot(200, lambda: self.buffer_widget.eval_js_function("select_root_node"))
 
-        self.buffer_widget.eval_js("init_background('{}');".format(self.theme_background_color))
+        self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
         self.change_title(self.get_title())
 
@@ -116,9 +116,9 @@ class AppBuffer(BrowserBuffer):
 
         if os.path.exists(self.url):
             with open(self.url, "r") as f:
-                self.buffer_widget.eval_js("refresh('{}');".format(string_to_base64(f.read())))
+                self.buffer_widget.eval_js_function("refresh", string_to_base64(f.read()))
 
-            self.buffer_widget.eval_js("init_background('{}');".format(self.theme_background_color))
+            self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
             self.change_title(self.get_title())
 
@@ -140,7 +140,7 @@ class AppBuffer(BrowserBuffer):
     def paste_node_topic(self):
         text = self.get_clipboard_text()
         if text.strip() != "":
-            self.buffer_widget.eval_js("update_node_topic('{}');".format(text))
+            self.buffer_widget.eval_js_function("update_node_topic", text)
             message_to_emacs("Paste: {}".format(text))
 
             self.save_file(False)
@@ -159,7 +159,7 @@ class AppBuffer(BrowserBuffer):
     @interactive(insert_or_do=True)
     def paste_node_tree(self):
         if self.cut_node_id:
-            self.buffer_widget.eval_js("paste_node_tree('{}');".format(self.cut_node_id))
+            self.buffer_widget.eval_js_function("paste_node_tree", self.cut_node_id)
             self.save_file(False)
             message_to_emacs("Paste node tree: {}".format(self.cut_node_id))
 
@@ -176,7 +176,7 @@ class AppBuffer(BrowserBuffer):
             unescape(self.buffer_widget.execute_js("get_node_topic();")))
 
     def handle_update_node_topic(self, topic):
-        self.buffer_widget.eval_js("update_node_topic('{}');".format(escape(topic)))
+        self.buffer_widget.eval_js_function("update_node_topic", escape(topic))
 
         self.change_title(self.get_title())
 
@@ -187,11 +187,11 @@ class AppBuffer(BrowserBuffer):
             self.handle_update_node_topic(str(result_content))
         elif callback_tag == "change_node_background":
             print(str(result_content))
-            self.buffer_widget.eval_js("change_node_background('{}');".format(str(result_content)))
+            self.buffer_widget.eval_js_function("change_node_background", str(result_content))
         elif callback_tag == "change_background_color":
-            self.buffer_widget.eval_js("change_background_color('{}');".format(str(result_content)))
+            self.buffer_widget.eval_js_function("change_background_color", str(result_content))
         elif callback_tag == "change_text_color":
-            self.buffer_widget.eval_js("change_text_color('{}');".format(str(result_content)))
+            self.buffer_widget.eval_js_function("change_text_color", str(result_content))
 
     def add_multiple_sub_nodes(self):
         node_id = self.buffer_widget.execute_js("_jm.get_selected_node();")
@@ -220,15 +220,15 @@ class AppBuffer(BrowserBuffer):
 
     @interactive
     def add_texted_sub_node(self,text):
-        self.buffer_widget.eval_js("add_texted_sub_node('{}');".format(str(text)))
+        self.buffer_widget.eval_js_function("add_texted_sub_node", str(text))
 
     @interactive
     def add_texted_brother_node(self,text):
-        self.buffer_widget.eval_js("add_texted_brother_node('{}');".format(str(text)))
+        self.buffer_widget.eval_js_function("add_texted_brother_node", str(text))
 
     @interactive
     def add_texted_middle_node(self,text):
-        self.buffer_widget.eval_js("add_texted_middle_node('{}');".format(str(text)))
+        self.buffer_widget.eval_js_function("add_texted_middle_node", str(text))
 
     def is_focus(self):
         return self.buffer_widget.execute_js("node_is_focus();")
