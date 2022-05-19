@@ -89,7 +89,7 @@ class AppBuffer(BrowserBuffer):
         if os.path.exists(self.url):
             with open(self.url, "r") as f:
                 _, ext = os.path.splitext(self.url)
-                is_freemind = "true" if ext == ".mm" else "false"
+                is_freemind = ext == ".mm"
                 self.buffer_widget.eval_js_function("open_file", string_to_base64(f.read()), is_freemind)
         else:
             self.buffer_widget.eval_js_function("init_root_node")
