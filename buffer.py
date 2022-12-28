@@ -33,6 +33,8 @@ import base64
 import time
 import sys
 Py_version=sys.version_info
+import json
+
 
 class AppBuffer(BrowserBuffer):
 
@@ -67,7 +69,11 @@ class AppBuffer(BrowserBuffer):
 
         self.build_all_methods(self)
 
+        self.watcher = QtCore.QFileSystemWatcher([self.url])
+        self.watcher.fileChanged.connect(self.file_changed)
+
         self.buffer_widget.loadFinished.connect(lambda _: self.initialize())
+
 
     def resize_view(self):
         self.buffer_widget.eval_js_function("relayout")
@@ -87,10 +93,13 @@ class AppBuffer(BrowserBuffer):
         self.url = os.path.expanduser(self.url)
 
         if os.path.exists(self.url):
-            with open(self.url, "r") as f:
-                _, ext = os.path.splitext(self.url)
-                is_freemind = ext == ".mm"
-                self.buffer_widget.eval_js_function("open_file", string_to_base64(f.read()), is_freemind)
+            if self.url.endswith(".org"):
+                self.buffer_widget.eval_js_function("open_file", string_to_base64(org2emm(self.url)), False)
+            else:
+                with open(self.url, "r") as f:
+                    _, ext = os.path.splitext(self.url)
+                    is_freemind = ext == ".mm"
+                    self.buffer_widget.eval_js_function("open_file", string_to_base64(f.read()), is_freemind)
         else:
             self.buffer_widget.eval_js_function("init_root_node")
 
@@ -115,12 +124,22 @@ class AppBuffer(BrowserBuffer):
         self.url = os.path.expanduser(self.url)
 
         if os.path.exists(self.url):
-            with open(self.url, "r") as f:
-                self.buffer_widget.eval_js_function("refresh", string_to_base64(f.read()))
+            if self.url.endswith(".org"):
+                content = org2emm(self.url)
+                self.buffer_widget.eval_js_function("refresh", string_to_base64(content), False)
+            else:
+                with open(self.url, "r") as f:
+                    self.buffer_widget.eval_js_function("refresh", string_to_base64(f.read()))
 
             self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
             self.change_title(self.get_title())
+            message_to_emacs("refresh file")
+
+    def file_changed(self, path):
+        mode = get_emacs_vars(['major-mode'])[0].value()
+        if mode != "eaf-mode":
+            self.refresh_page()
 
     @interactive(insert_or_do=True)
     def change_background_color(self):
@@ -268,19 +287,29 @@ class AppBuffer(BrowserBuffer):
 
     @interactive(insert_or_do=True)
     def save_file(self, notify=True):
-        file_path = self.get_save_path("emm")
+        if self.url.endswith(".org"):
+            file_path = self.get_save_path("org")
+        else:
+            file_path = self.get_save_path("emm")
         with open(file_path, "w") as f:
-            f.write(self.buffer_widget.execute_js("save_file();"))
+            data = self.buffer_widget.execute_js("save_file();")
+            if self.url.endswith(".org"):
+                org_res = []
+                preorder(json.loads(data)["data"], 0, org_res)
+                data = "".join(org_res)
+            f.write(data)
+
 
         if notify:
             message_to_emacs("Save file: " + file_path)
 
     @interactive(insert_or_do=True)
     def save_org_file(self):
-        file_path = self.get_save_path("org")
-        touch(file_path)
-        eval_in_emacs('eaf--export-org-json', [self.buffer_widget.execute_js("save_file();"), file_path])
-        message_to_emacs("Save org file: " + file_path)
+        if not self.url.endswith(".org"):
+            file_path = self.get_save_path("org")
+            touch(file_path)
+            eval_in_emacs('eaf--export-org-json', [self.buffer_widget.execute_js("save_file();"), file_path])
+            message_to_emacs("Save org file: " + file_path)
 
     @interactive(insert_or_do=True)
     def save_freemind_file(self, notify=True):
@@ -312,3 +341,84 @@ class AppBuffer(BrowserBuffer):
         ''' Update multiplt middle nodes.'''
         for line in str(new_text).split("\n"):
             self.add_texted_middle_node(line)
+
+
+def preorder(root, level=0, res=[]):
+    content = root["content"] if "content" in root else ""
+    header = root["topic"]
+    if level == 0:
+        # content.replace("#+title", header)  # TODO  暂时不修改 title
+        res.append(content)
+    else:
+        res.append("*" * level + " " + header + "\n")
+        res.append(content)
+
+    children = root["children"] if "children" in root else []
+    for child in children:
+        preorder(child, level + 1, res)
+
+
+def is_header(line):
+    if not line.startswith("*"):
+        return False
+    return list(set(line.split()[0])) == ["*"]
+
+
+def generate_id():
+    """from jsmind.js"""
+    # net Date().getTime().toString(16)+Math.random().toString(16).substr(2)).substr(2,16);
+    import random
+
+    return str(random.random())[2:]
+
+
+def org2emm(path):
+    emm = {
+        "meta": {
+            "name": "jsMind",
+            "author": "hizzgdev@163.com",
+            "version": "0.4.6",
+        },
+        "format": "node_tree",
+    }
+
+    with open(path) as f:
+        data = {
+            "id": "root",
+            "topic": os.path.basename(path),
+            "expanded": True,
+            "direction": "right",
+        }
+        lines = f.readlines()
+        path = [data]
+        i = 0
+        level = 0
+        n = len(lines)
+        while i < n:
+            content = []
+            while i < n and not is_header(lines[i]):
+                content.append(lines[i])
+                i += 1
+            path[-1]["content"] = "".join(content)
+            if i == n:
+                break
+            stars, header = lines[i].split(" ", 1)
+            new_level = len(stars)
+            node = {
+                "id": generate_id(),
+                "expanded": True,
+                "topic": header,
+            }
+            if new_level <= level:
+                for _ in range(level - new_level + 1):
+                    path.pop()
+            else:
+                path[-1]["children"] = []
+                new_level = level + 1  # fix ill format
+            path[-1]["children"].append(node)
+            path.append(node)
+            level = new_level
+            i += 1
+
+    emm["data"] = data
+    return json.dumps(emm)

@@ -153,7 +153,7 @@
   :type 'cons)
 
 (defcustom eaf-mindmap-extension-list
-  '("emm" "mm")
+  '("emm" "mm" "org")
   "The extension list of mindmap application."
   :type 'cons)
 
