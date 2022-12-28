@@ -289,15 +289,17 @@ class AppBuffer(BrowserBuffer):
     def save_file(self, notify=True):
         if self.url.endswith(".org"):
             file_path = self.get_save_path("org")
-        else:
-            file_path = self.get_save_path("emm")
-        with open(file_path, "w") as f:
             data = self.buffer_widget.execute_js("save_file();")
             if self.url.endswith(".org"):
                 org_res = []
                 preorder(json.loads(data)["data"], 0, org_res)
                 data = "".join(org_res)
-            f.write(data)
+                eval_in_emacs('eaf-mindmap--write-cotent-to-file', [self.url, data])
+        else:
+            file_path = self.get_save_path("emm")
+            with open(file_path, "w") as f:
+                data = self.buffer_widget.execute_js("save_file();")
+                f.write(data)
 
 
         if notify:

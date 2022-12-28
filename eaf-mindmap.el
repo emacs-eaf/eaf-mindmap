@@ -487,10 +487,20 @@ actural call `org-json-gen-alist1' to work."
     (search-forward (car keywords))
     (eaf-mindmap--search-succesive (cdr keywords))))
 
+
 (defun eaf-mindmap--search-succesive-in-file (file keywords)
   (with-current-buffer (find-file-other-window file)
     (goto-char (point-min))
     (eaf-mindmap--search-succesive keywords)))
+
+
+(defun eaf-mindmap--write-cotent-to-file (file content)
+  (with-current-buffer (find-file-noselect file)
+    (erase-buffer)
+    (goto-char (point-min))
+    (insert content)
+    (save-buffer)))
+
 
 (provide 'eaf-mindmap)
 
