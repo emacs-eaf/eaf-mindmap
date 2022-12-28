@@ -342,12 +342,35 @@ class AppBuffer(BrowserBuffer):
         for line in str(new_text).split("\n"):
             self.add_texted_middle_node(line)
 
+    @interactive
+    def jump_to_keywords(self):
+        if self.url.endswith(".org"):
+            data = self.buffer_widget.execute_js("save_file();")
+            node_id = self.buffer_widget.execute_js("get_selected_nodeid();")
+            keywords = path_finder(json.loads(data)["data"], node_id)
+            eval_in_emacs('eaf-mindmap--search-succesive-in-file', [self.url, keywords])
+
+
+def path_finder(root, target_id):
+    res, path = [], []
+
+    def dfs(root, level=0):
+        if root["id"] == target_id:
+            res.append(list(path))
+        if "children" in root:
+            for node in root["children"]:
+                path.append("*" * (level + 1) + " " + node["topic"])
+                dfs(node, level + 1)
+                path.pop()
+
+    dfs(root)
+    return res[0]
+
 
 def preorder(root, level=0, res=[]):
     content = root["content"] if "content" in root else ""
     header = root["topic"]
     if level == 0:
-        # content.replace("#+title", header)  # TODO  暂时不修改 title
         res.append(content)
     else:
         res.append("*" * level + " " + header + "\n")
@@ -407,7 +430,7 @@ def org2emm(path):
             node = {
                 "id": generate_id(),
                 "expanded": True,
-                "topic": header,
+                "topic": header.strip(),
             }
             if new_level <= level:
                 for _ in range(level - new_level + 1):
