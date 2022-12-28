@@ -34,6 +34,7 @@ import time
 import sys
 Py_version=sys.version_info
 import json
+import random
 
 
 class AppBuffer(BrowserBuffer):
@@ -294,7 +295,7 @@ class AppBuffer(BrowserBuffer):
                 org_res = []
                 preorder(json.loads(data)["data"], 0, org_res)
                 data = "".join(org_res)
-                eval_in_emacs('eaf-mindmap--write-cotent-to-file', [self.url, data])
+                eval_in_emacs('eaf-mindmap--write-content-to-file', [self.url, data])
         else:
             file_path = self.get_save_path("emm")
             with open(file_path, "w") as f:
@@ -354,6 +355,9 @@ class AppBuffer(BrowserBuffer):
 
 
 def path_finder(root, target_id):
+    """
+    traverse emm tree to get the topic path from root to target_id
+    """
     res, path = [], []
 
     def dfs(root, level=0):
@@ -370,6 +374,9 @@ def path_finder(root, target_id):
 
 
 def preorder(root, level=0, res=[]):
+    """
+    convert emm to org
+    """
     content = root["content"] if "content" in root else ""
     header = root["topic"]
     if level == 0:
@@ -383,21 +390,36 @@ def preorder(root, level=0, res=[]):
         preorder(child, level + 1, res)
 
 
-def is_header(line):
+def is_header(line, level=None):
     if not line.startswith("*"):
         return False
-    return list(set(line.split()[0])) == ["*"]
+    if level:
+        stars = line.split()[0]
+        return list(set(stars)) == ["*"] and len(stars) == level
+    else:
+        return list(set(line.split()[0])) == ["*"]
 
 
 def generate_id():
-    """from jsmind.js"""
-    # net Date().getTime().toString(16)+Math.random().toString(16).substr(2)).substr(2,16);
-    import random
+    """from jsmind.js
+    new Date().getTime().toString(16)+Math.random().toString(16).substr(2)).substr(2,16);
+    """
 
     return str(random.random())[2:]
 
 
+def get_top_header_num(lines):
+    cnt = 0
+    for line in lines:
+        if is_header(line, 1):
+            cnt += 1
+    return cnt
+
+
 def org2emm(path):
+    """
+    read org file and convert it to emm/json format
+    """
     emm = {
         "meta": {
             "name": "jsMind",
@@ -412,12 +434,12 @@ def org2emm(path):
             "id": "root",
             "topic": os.path.basename(path),
             "expanded": True,
-            "direction": "right",
         }
         lines = f.readlines()
+        top_header_num = get_top_header_num(lines)
         path = [data]
-        i = 0
-        level = 0
+        i, level = 0, 0
+        top_header_cnt = 0
         n = len(lines)
         while i < n:
             content = []
@@ -429,6 +451,7 @@ def org2emm(path):
                 break
             stars, header = lines[i].split(" ", 1)
             new_level = len(stars)
+
             node = {
                 "id": generate_id(),
                 "expanded": True,
@@ -440,6 +463,19 @@ def org2emm(path):
             else:
                 path[-1]["children"] = []
                 new_level = level + 1  # fix ill format
+
+            if len(stars) == 1:  # auto blance top level headers
+                top_header_cnt += 1
+                if top_header_cnt <= top_header_num // 2:
+                    direction = "right"
+                else:
+                    direction = "left"
+            else:
+                # inherit direction from father node
+                direction = path[-1]["direction"] 
+
+            node["direction"] = direction
+
             path[-1]["children"].append(node)
             path.append(node)
             level = new_level

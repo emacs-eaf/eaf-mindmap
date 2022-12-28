@@ -494,7 +494,7 @@ actural call `org-json-gen-alist1' to work."
     (eaf-mindmap--search-succesive keywords)))
 
 
-(defun eaf-mindmap--write-cotent-to-file (file content)
+(defun eaf-mindmap--write-content-to-file (file content)
   (with-current-buffer (find-file-noselect file)
     (erase-buffer)
     (goto-char (point-min))
