@@ -146,7 +146,9 @@ class AppBuffer(BrowserBuffer):
             message_to_emacs("refresh file")
 
     def file_changed(self, path):
-        self.refresh_page()
+        mode = get_emacs_vars(['major-mode'])[0].value()
+        if mode != "eaf-mode":
+            self.refresh_page()
 
     @interactive(insert_or_do=True)
     def change_background_color(self):
@@ -294,17 +296,17 @@ class AppBuffer(BrowserBuffer):
 
     @interactive(insert_or_do=True)
     def save_file(self, notify=True):
-        if self.url.endswith(".org"):
-            file_path = self.get_save_path("org")
+        if self.url.endswith(".org") or self.url.endswith(".md"):
+            file_path = self.url
             data = self.buffer_widget.execute_js("save_file();")
-            if self.url.endswith(".org") or self.url.endswith(".md"):
-                jscache = HeaderTree(self.url)
-                jscache.parse_emm(json.loads(data))
-                if jscache.header_list != self.cache.header_list:
-                    jscache.merge(self.cache)
-                    self.cache = jscache
-                data = "".join(self.cache.flatten())
-                eval_in_emacs('eaf-mindmap--write-content-to-file', [self.url, data])
+            jscache = HeaderTree(self.url)
+            jscache.parse_emm(json.loads(data))
+            if jscache.header_list != self.cache.header_list:
+                jscache.merge(self.cache)
+                print(jscache.data)
+                self.cache = jscache
+            data = "".join(self.cache.flatten())
+            eval_in_emacs('eaf-mindmap--write-content-to-file', [self.url, data])
         else:
             file_path = self.get_save_path("emm")
             with open(file_path, "w") as f:
@@ -439,11 +441,8 @@ class HeaderTree:
             for node in queue:
                 for i, child in enumerate(node.get("children", [])):
                     if level == 1:
-                        direction = (
-                            "right"
-                            if i <= len(node["children"]) // 2
-                            else "left"
-                        )
+                        half = (len(node["children"]) + 1) // 2
+                        direction = "right" if i < half else "left"
                     else:
                         direction = dual[node["id"]]["direction"]
                     new_node = {
