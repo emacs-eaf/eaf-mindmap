@@ -148,12 +148,13 @@
     ("M-o" . "eval_js")
     ("M-O" . "eval_js_file")
     ("<f12>" . "open_devtools")
+    ("5" . "jump_to_keywords")
     )
   "The keybinding of EAF Mindmap."
   :type 'cons)
 
 (defcustom eaf-mindmap-extension-list
-  '("emm" "mm")
+  '("emm" "mm" "org" "md")
   "The extension list of mindmap application."
   :type 'cons)
 
@@ -479,6 +480,27 @@ actural call `org-json-gen-alist1' to work."
                   "update_multiple_middle_nodes"
                   (buffer-string)))
 (add-to-list 'eaf-edit-confirm-function-alist '("mindmap-middle" . eaf-mindmap-confirm-middle-nodes))
+
+
+(defun eaf-mindmap--search-succesive (keywords)
+  (when keywords
+    (search-forward (car keywords))
+    (eaf-mindmap--search-succesive (cdr keywords))))
+
+
+(defun eaf-mindmap--search-succesive-in-file (file keywords)
+  (with-current-buffer (find-file-other-window file)
+    (goto-char (point-min))
+    (eaf-mindmap--search-succesive keywords)))
+
+
+(defun eaf-mindmap--write-content-to-file (file content)
+  (with-current-buffer (find-file-noselect file)
+    (erase-buffer)
+    (goto-char (point-min))
+    (insert content)
+    (save-buffer)))
+
 
 (provide 'eaf-mindmap)
 

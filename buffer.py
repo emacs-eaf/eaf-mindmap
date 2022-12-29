@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3# -*- coding: utf-8 -*-
 
 # Copyright (C) 2018 Andy Stewart
 #
@@ -33,6 +32,9 @@ import base64
 import time
 import sys
 Py_version=sys.version_info
+import json
+import random
+
 
 class AppBuffer(BrowserBuffer):
 
@@ -67,7 +69,12 @@ class AppBuffer(BrowserBuffer):
 
         self.build_all_methods(self)
 
+        self.watcher = QtCore.QFileSystemWatcher([self.url])
+        self.watcher.fileChanged.connect(self.file_changed)
+        self.cache = HeaderTree(self.url)
+
         self.buffer_widget.loadFinished.connect(lambda _: self.initialize())
+
 
     def resize_view(self):
         self.buffer_widget.eval_js_function("relayout")
@@ -88,9 +95,14 @@ class AppBuffer(BrowserBuffer):
 
         if os.path.exists(self.url):
             with open(self.url, "r") as f:
-                _, ext = os.path.splitext(self.url)
-                is_freemind = ext == ".mm"
-                self.buffer_widget.eval_js_function("open_file", string_to_base64(f.read()), is_freemind)
+                if self.url.endswith(".org") or self.url.endswith(".md"):
+                    self.cache.parse_lines(f.readlines())
+                    emm_json = json.dumps(self.cache.to_emm())
+                    self.buffer_widget.eval_js_function("open_file", string_to_base64(emm_json), False)
+                else:
+                    _, ext = os.path.splitext(self.url)
+                    is_freemind = ext == ".mm"
+                    self.buffer_widget.eval_js_function("open_file", string_to_base64(f.read()), is_freemind)
         else:
             self.buffer_widget.eval_js_function("init_root_node")
 
@@ -116,11 +128,27 @@ class AppBuffer(BrowserBuffer):
 
         if os.path.exists(self.url):
             with open(self.url, "r") as f:
-                self.buffer_widget.eval_js_function("refresh", string_to_base64(f.read()))
+                if self.url.endswith(".org") or self.url.endswith(".md"):
+                    orgcache = HeaderTree(self.url)
+                    orgcache.parse_lines(f.readlines())
+                    if orgcache.header_list == self.cache.header_list:
+                        self.cache.merge(orgcache, "topic")
+                    else:
+                        self.cache = orgcache
+                        emm_json = json.dumps(self.cache.to_emm())
+                        self.buffer_widget.eval_js_function("refresh", string_to_base64(emm_json), False)
+                else:
+                    self.buffer_widget.eval_js_function("refresh", string_to_base64(f.read()))
 
             self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
             self.change_title(self.get_title())
+            message_to_emacs("refresh file")
+
+    def file_changed(self, path):
+        mode = get_emacs_vars(['major-mode'])[0].value()
+        if mode != "eaf-mode":
+            self.refresh_page()
 
     @interactive(insert_or_do=True)
     def change_background_color(self):
@@ -268,19 +296,34 @@ class AppBuffer(BrowserBuffer):
 
     @interactive(insert_or_do=True)
     def save_file(self, notify=True):
-        file_path = self.get_save_path("emm")
-        with open(file_path, "w") as f:
-            f.write(self.buffer_widget.execute_js("save_file();"))
+        if self.url.endswith(".org") or self.url.endswith(".md"):
+            file_path = self.url
+            data = self.buffer_widget.execute_js("save_file();")
+            jscache = HeaderTree(self.url)
+            jscache.parse_emm(json.loads(data))
+            if jscache.header_list != self.cache.header_list:
+                jscache.merge(self.cache)
+                print(jscache.data)
+                self.cache = jscache
+            data = "".join(self.cache.flatten())
+            eval_in_emacs('eaf-mindmap--write-content-to-file', [self.url, data])
+        else:
+            file_path = self.get_save_path("emm")
+            with open(file_path, "w") as f:
+                data = self.buffer_widget.execute_js("save_file();")
+                f.write(data)
+
 
         if notify:
             message_to_emacs("Save file: " + file_path)
 
     @interactive(insert_or_do=True)
     def save_org_file(self):
-        file_path = self.get_save_path("org")
-        touch(file_path)
-        eval_in_emacs('eaf--export-org-json', [self.buffer_widget.execute_js("save_file();"), file_path])
-        message_to_emacs("Save org file: " + file_path)
+        if not self.url.endswith(".org"):
+            file_path = self.get_save_path("org")
+            touch(file_path)
+            eval_in_emacs('eaf--export-org-json', [self.buffer_widget.execute_js("save_file();"), file_path])
+            message_to_emacs("Save org file: " + file_path)
 
     @interactive(insert_or_do=True)
     def save_freemind_file(self, notify=True):
@@ -312,3 +355,202 @@ class AppBuffer(BrowserBuffer):
         ''' Update multiplt middle nodes.'''
         for line in str(new_text).split("\n"):
             self.add_texted_middle_node(line)
+
+    @interactive
+    def jump_to_keywords(self):
+        if self.url.endswith(".org"):
+            node_id = self.buffer_widget.execute_js("get_selected_nodeid();")
+            keywords = self.cache.path_finder(node_id)
+            eval_in_emacs('eaf-mindmap--search-succesive-in-file', [self.url, keywords])
+
+
+class HeaderTree:
+    def __init__(self, url=""):
+        self.header_list = []
+        self.data = {}
+        self.header_prefix = "*"
+        self.root_name = os.path.basename(url), 
+        if url.endswith(".org"):
+            self.header_prefix = "*"
+        elif url.endswith(".md"):
+            self.header_prefix = "#"
+
+    def parse_emm(self, emm):
+        """
+        read a emm format structure
+        """
+        self.data = emm["data"]
+        self.header = self.flatten(False)
+
+    def parse_lines(self, lines):
+        """
+        from lines to tree
+        """
+        self.data = {
+            "id": "root",
+            "topic": self.root_name,
+        }
+
+        path = [self.data]
+        i, level = 0, 0
+        n = len(lines)
+        while i < n:
+            content = []
+            while i < n and not self.is_header(lines[i]):
+                content.append(lines[i])
+                i += 1
+            path[-1]["content"] = "".join(content)
+            if i == n:
+                break
+            stars, header = lines[i].split(" ", 1)
+            self.header_list.append(header.strip())
+            new_level = len(stars)
+
+            node = {
+                "id": generate_id(),
+                "topic": header.strip(),
+            }
+            if new_level <= level:
+                for _ in range(level - new_level + 1):
+                    path.pop()
+            else:
+                path[-1]["children"] = []
+                new_level = level + 1  # fix ill format
+
+            path[-1]["children"].append(node)
+            path.append(node)
+            level = new_level
+            i += 1
+
+    def to_emm(self):
+        """
+        convert self.data to emm format, a tree copy algorithm(bfs)
+        """
+
+        queue = [self.data]
+        level = 1
+        root = {
+            "id": "root",
+            "topic": self.data["topic"],
+            "expanded": True,
+            "children": [],
+        }
+        dual = {"root": root}
+        while queue:
+            temp_queue = []
+            for node in queue:
+                for i, child in enumerate(node.get("children", [])):
+                    if level == 1:
+                        half = (len(node["children"]) + 1) // 2
+                        direction = "right" if i < half else "left"
+                    else:
+                        direction = dual[node["id"]]["direction"]
+                    new_node = {
+                        "id": child["id"],
+                        "topic": child["topic"],
+                        "expanded": True,
+                        "direction": direction,
+                        "children": [],
+                    }
+                    temp_queue.append(child)
+                    dual[child["id"]] = new_node
+                    dual[node["id"]]["children"].append(new_node)
+            level += 1
+            queue = temp_queue
+
+        emm = {
+            "meta": {
+                "name": "jsMind",
+                "author": "hizzgdev@163.com",
+                "version": "0.4.6",
+            },
+            "format": "node_tree",
+        }
+        emm["data"] = dual["root"]
+        return emm
+
+    def flatten(self, with_content=True):
+        """
+        convert tree to lines,  preorder traverse
+        """
+
+        def dfs(root, level=0, res=[]):
+            content = root["content"] if "content" in root else ""
+            header = root["topic"]
+            if level == 0:
+                if with_content:
+                    res.append(content)
+            else:
+                res.append(self.header_prefix * level + " " + header + "\n")
+                if with_content:
+                    res.append(content)
+
+            children = root["children"] if "children" in root else []
+            for child in children:
+                dfs(child, level + 1, res)
+
+        lines = []
+        dfs(self.data, 0, lines)
+        return lines
+
+    def is_header(self, line, level=None):
+        if not line.startswith(self.header_prefix):
+            return False
+        if len(line.split()) <= 1:
+            return False
+        stars = line.split()[0]
+        if level:
+            return (
+                list(set(stars)) == [self.header_prefix]
+                and len(stars) == level
+            )
+        else:
+            return list(set(stars)) == [self.header_prefix]
+
+    def merge(self, other, by="id"):
+        """
+        merge other tree into self.data
+        by:  id or topic
+        """
+
+        lookup = {}
+
+        def build_map(root):
+            lookup[root[by]] = root
+            for node in root.get("children", []):
+                build_map(node)
+
+        build_map(self.data)
+
+        def _merge(root):
+            if root[by] in lookup:
+                if "content" in root:
+                    lookup[root[by]]["content"] = root["content"]
+            for node in root.get("children", []):
+                _merge(node)
+
+        _merge(other.data)
+
+    def path_finder(self, target_id):
+        """
+        traverse emm tree to get the topic path from root to target_id
+        """
+        res, path = [], []
+
+        def dfs(root, level=0):
+            if root["id"] == target_id:
+                res.append(list(path))
+            elif "children" in root:
+                for node in root["children"]:
+                    path.append(
+                        self.header_prefix * (level + 1) + " " + node["topic"]
+                    )
+                    dfs(node, level + 1)
+                    path.pop()
+
+        dfs(self.data)
+        return res[0]
+
+
+def generate_id():
+    return str(random.random())[2:]
