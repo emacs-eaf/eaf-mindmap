@@ -20,8 +20,7 @@
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QColor, QMouseEvent
+from PyQt6.QtGui import QMouseEvent
 from core.webengine import BrowserBuffer
 from core.utils import (touch, string_to_base64, interactive, 
                         eval_in_emacs, message_to_emacs, 
@@ -31,10 +30,10 @@ import os
 import base64
 import time
 import sys
-Py_version=sys.version_info
 import json
 import random
 
+Py_version=sys.version_info
 
 class AppBuffer(BrowserBuffer):
 
@@ -223,14 +222,14 @@ class AppBuffer(BrowserBuffer):
 
     def add_multiple_sub_nodes(self):
         node_id = self.buffer_widget.execute_js("_jm.get_selected_node();")
-        if node_id != None:
+        if node_id is not None:
             eval_in_emacs('eaf--add-multiple-sub-nodes', [self.buffer_id])
         else:
             message_to_emacs("No selected node.")
 
     def add_multiple_brother_nodes(self):
         node_id = self.buffer_widget.execute_js("_jm.get_selected_node();")
-        if node_id == None:
+        if node_id is None:
             message_to_emacs("No selected node.")
         elif not self.buffer_widget.execute_js("_jm.get_selected_node().parent;"):
             message_to_emacs("No parent node for selected node.")
@@ -239,7 +238,7 @@ class AppBuffer(BrowserBuffer):
 
     def add_multiple_middle_nodes(self):
         node_id = self.buffer_widget.execute_js("_jm.get_selected_node();")
-        if node_id == None:
+        if node_id is None:
             message_to_emacs("No selected node.")
         elif not self.buffer_widget.execute_js("_jm.get_selected_node().parent;"):
             message_to_emacs("No parent node for selected node.")
