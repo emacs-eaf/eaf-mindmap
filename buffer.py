@@ -23,7 +23,7 @@ from PyQt6.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent
 from core.webengine import BrowserBuffer
 from core.utils import (touch, string_to_base64, interactive, 
-                        eval_in_emacs, message_to_emacs, 
+                        eval_in_emacs, message_to_emacs, get_emacs_theme_background, get_emacs_theme_foreground,
                         get_emacs_vars, PostGui, get_app_dark_mode)
 from html import escape, unescape
 import os
@@ -110,6 +110,14 @@ class AppBuffer(BrowserBuffer):
         self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
         self.change_title(self.get_title())
+
+    @interactive
+    def update_theme(self):
+        self.theme_foreground_color = get_emacs_theme_foreground()
+        self.theme_background_color = get_emacs_theme_background()
+        self.buffer_widget.eval_js("document.body.style.background = '{}'; document.body.style.color = '{}'".format(
+            self.theme_background_color, self.theme_foreground_color))
+        self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
     def build_js_method(self, method_name, auto_save=False, js_kwargs=None):
         js_kwargs = js_kwargs or {}
