@@ -113,10 +113,7 @@ class AppBuffer(BrowserBuffer):
 
     @interactive
     def update_theme(self):
-        self.theme_foreground_color = get_emacs_theme_foreground()
-        self.theme_background_color = get_emacs_theme_background()
-        self.buffer_widget.eval_js("document.body.style.background = '{}'; document.body.style.color = '{}'".format(
-            self.theme_background_color, self.theme_foreground_color))
+        super().update_theme()
         self.buffer_widget.eval_js_function("init_background", self.theme_background_color)
 
     def build_js_method(self, method_name, auto_save=False, js_kwargs=None):
