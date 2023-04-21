@@ -375,75 +375,15 @@ actural call `org-json-gen-alist1' to work."
 
 (defun eaf--add-multiple-sub-nodes (buffer-id)
   "EAF Browser: edit FOCUS-TEXT with Emacs's BUFFER-ID."
-  (split-window-below -10)
-  (other-window 1)
-  (let ((edit-text-buffer (generate-new-buffer (format "eaf-%s-add-multiple-sub-nodes" eaf--buffer-app-name))))
-    (with-current-buffer edit-text-buffer
-      (eaf-edit-mode)
-      (set (make-local-variable 'eaf--buffer-id) buffer-id))
-    (switch-to-buffer edit-text-buffer)
-    (setq-local eaf-edit-confirm-action "mindmap-sub")
-    (setq header-line-format
-          (substitute-command-keys
-           (concat
-            "\\<eaf-edit-mode-map>"
-            " EAF/" eaf--buffer-app-name " EDIT: "
-            "Confirm with `\\[eaf-edit-buffer-confirm]', "
-            "Cancel with `\\[eaf-edit-buffer-cancel]', "
-            "Separate diffrent nodes with 'RET'. "
-            )))
-    ;; When text line number above
-    (when (> (line-number-at-pos) 30)
-      (goto-char (point-min)))
-    ))
+  (eaf-edit-buffer-popup buffer-id "eaf-%s-add-multiple-sub-nodes" "mindmap-sub" ""))
 
 (defun eaf--add-multiple-brother-nodes (buffer-id)
   "EAF Browser: edit FOCUS-TEXT with Emacs's BUFFER-ID."
-  (split-window-below -10)
-  (other-window 1)
-  (let ((edit-text-buffer (generate-new-buffer (format "eaf-%s-add-multiple-brother-nodes" eaf--buffer-app-name))))
-    (with-current-buffer edit-text-buffer
-      (eaf-edit-mode)
-      (set (make-local-variable 'eaf--buffer-id) buffer-id))
-    (switch-to-buffer edit-text-buffer)
-    (setq-local eaf-edit-confirm-action "mindmap-brother")
-    (setq header-line-format
-          (substitute-command-keys
-           (concat
-            "\\<eaf-edit-mode-map>"
-            " EAF/" eaf--buffer-app-name " EDIT: "
-            "Confirm with `\\[eaf-edit-buffer-confirm]', "
-            "Cancel with `\\[eaf-edit-buffer-cancel]', "
-            "Separate diffrent nodes with 'RET'. "
-            )))
-    ;; When text line number above
-    (when (> (line-number-at-pos) 30)
-      (goto-char (point-min)))
-    ))
+  (eaf-edit-buffer-popup buffer-id "eaf-%s-add-multiple-brother-nodes" "mindmap-brother" ""))
 
 (defun eaf--add-multiple-middle-nodes (buffer-id)
   "EAF Browser: edit FOCUS-TEXT with Emacs's BUFFER-ID."
-  (split-window-below -10)
-  (other-window 1)
-  (let ((edit-text-buffer (generate-new-buffer (format "eaf-%s-add-multiple-middle-nodes" eaf--buffer-app-name))))
-    (with-current-buffer edit-text-buffer
-      (eaf-edit-mode)
-      (set (make-local-variable 'eaf--buffer-id) buffer-id))
-    (switch-to-buffer edit-text-buffer)
-    (setq-local eaf-edit-confirm-action "mindmap-middle")
-    (setq header-line-format
-          (substitute-command-keys
-           (concat
-            "\\<eaf-edit-mode-map>"
-            " EAF/" eaf--buffer-app-name " EDIT: "
-            "Confirm with `\\[eaf-edit-buffer-confirm]', "
-            "Cancel with `\\[eaf-edit-buffer-cancel]', "
-            "Separate diffrent nodes with 'RET'. "
-            )))
-    ;; When text line number above
-    (when (> (line-number-at-pos) 30)
-      (goto-char (point-min)))
-    ))
+  (eaf-edit-buffer-popup buffer-id "eaf-%s-add-multiple-middle-nodes" "mindmap-middle" ""))
 
 ;;;###autoload
 (defun eaf-open-mindmap (file)
