@@ -22,9 +22,7 @@ from PyQt6 import QtCore
 from PyQt6.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent
 from core.webengine import BrowserBuffer
-from core.utils import (touch, string_to_base64, interactive, 
-                        eval_in_emacs, message_to_emacs, get_emacs_theme_background, get_emacs_theme_foreground,
-                        get_emacs_vars, PostGui, get_app_dark_mode)
+from core.utils import *
 from html import escape, unescape
 import os
 import base64
