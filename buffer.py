@@ -18,18 +18,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt6 import QtCore
-from PyQt6.QtCore import QUrl, QTimer, QEvent, QPointF, Qt
-from PyQt6.QtGui import QMouseEvent
-from core.webengine import BrowserBuffer
-from core.utils import *
-from html import escape, unescape
-import os
 import base64
-import time
-import sys
 import json
+import os
 import random
+import sys
+import time
+from html import escape, unescape
+
+from core.utils import *
+from core.webengine import BrowserBuffer
+from PyQt6 import QtCore
+from PyQt6.QtCore import QEvent, QPointF, Qt, QTimer, QUrl
+from PyQt6.QtGui import QMouseEvent
 
 Py_version=sys.version_info
 
@@ -81,10 +82,10 @@ class AppBuffer(BrowserBuffer):
 
         # The .jsmind-inner element is move right and bottom 30px,
         # so we must use a point greater than (30, 30), ex (100, 100).
-        self.focus_widget(QMouseEvent(QEvent.Type.MouseButtonPress, 
-                                      QPointF(100, 100), 
-                                      Qt.MouseButton.LeftButton, 
-                                      Qt.MouseButton.LeftButton, 
+        self.focus_widget(QMouseEvent(QEvent.Type.MouseButtonPress,
+                                      QPointF(100, 100),
+                                      Qt.MouseButton.LeftButton,
+                                      Qt.MouseButton.LeftButton,
                                       Qt.KeyboardModifier.NoModifier))
 
     def init_file(self):
@@ -371,7 +372,7 @@ class HeaderTree:
         self.header_list = []
         self.data = {}
         self.header_prefix = "*"
-        self.root_name = os.path.basename(url), 
+        self.root_name = os.path.basename(url),
         if url.endswith(".org"):
             self.header_prefix = "*"
         elif url.endswith(".md"):
