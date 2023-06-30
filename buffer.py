@@ -213,6 +213,7 @@ class AppBuffer(BrowserBuffer):
 
         self.save_file(False)
 
+    @PostGui()
     def handle_input_response(self, callback_tag, result_content):
         if callback_tag == "update_node_topic":
             self.handle_update_node_topic(str(result_content))
