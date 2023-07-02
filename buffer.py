@@ -77,6 +77,7 @@ class AppBuffer(BrowserBuffer):
     def resize_view(self):
         self.buffer_widget.eval_js_function("relayout")
 
+    @PostGui()
     def initialize(self):
         self.init_file()
 
@@ -148,6 +149,7 @@ class AppBuffer(BrowserBuffer):
             self.change_title(self.get_title())
             message_to_emacs("refresh file")
 
+    @PostGui()
     def file_changed(self, path):
         mode = get_emacs_vars(['major-mode'])[0].value()
         if mode != "eaf-mode":
